@@ -1,0 +1,788 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Animal Encyclopedia</title>
+  <meta name="description" content="A minimalist, modern animal encyclopedia — search animals, browse categories, view profiles, gallery, and endangered awareness." />
+  <style>
+    :root{
+      --bg:#f7fafc;
+      --card:#ffffff;
+      --muted:#667085;
+      --accent:#0ea5a4; /* teal */
+      --radius:14px;
+      --glass: rgba(255,255,255,0.6);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,var(--bg),#eef2f7);color:#0f172a;min-height:100vh}
+    .container{max-width:1100px;margin:36px auto;padding:24px}
+
+    header{display:flex;gap:16px;align-items:center;justify-content:space-between}
+    h1{font-size:20px;margin:0}
+    .sub{color:var(--muted);font-size:13px}
+
+    /* search */
+    .search-row{display:flex;gap:12px;margin-top:18px;align-items:center}
+    .search{flex:1;display:flex;background:var(--card);border-radius:12px;padding:8px 12px;align-items:center;box-shadow:0 6px 18px rgba(12,24,48,0.06)}
+    .search input{border:0;outline:0;background:transparent;padding:8px;font-size:15px;width:100%}
+    .chip{padding:6px 10px;border-radius:999px;background:transparent;border:1px solid rgba(15,23,42,0.06);font-size:13px;cursor:pointer}
+
+    /* layout */
+    main{display:grid;grid-template-columns:1fr 320px;gap:24px;margin-top:22px}
+
+    /* cards */
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+    .card{background:var(--card);border-radius:12px;padding:12px;display:flex;gap:12px;align-items:flex-start;box-shadow:0 8px 28px rgba(12,24,48,0.06)}
+    .thumb{width:110px;height:90px;border-radius:10px;flex-shrink:0;background-size:cover;background-position:center}
+    .meta{flex:1}
+    .name{font-weight:600}
+    .tag{font-size:12px;color:var(--muted)}
+
+    /* sidebar */
+    aside{position:relative}
+    .panel{background:var(--card);padding:12px;border-radius:12px;box-shadow:0 8px 28px rgba(12,24,48,0.06)}
+    .cats{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+
+    /* trivia */
+    .trivia{margin-top:12px;padding:12px;border-radius:12px;background:linear-gradient(135deg,rgba(14,165,164,0.06),rgba(59,130,246,0.03));font-size:14px}
+
+    /* gallery */
+    .gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+    .gallery img{width:100%;height:78px;object-fit:cover;border-radius:8px;cursor:pointer}
+
+    .gif-gallery {
+  margin-top: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  width: 100%;
+}
+
+.gif-gallery img {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+  transition: transform 0.4s ease, opacity 0.5s ease;
+}
+
+.gif-gallery img:hover {
+  transform: scale(1.05);
+}
+
+
+    /* endangered */
+    .endangered-list{margin-top:8px}
+    .status{font-size:12px;padding:6px 8px;border-radius:999px;background:#fff6f6;color:#a41616;border:1px solid rgba(164,22,22,0.06)}
+
+    /* modal */
+    .modal{position:fixed;inset:0;background:rgba(2,6,23,0.5);display:none;align-items:center;justify-content:center;padding:18px;z-index:60}
+    .modal.open{display:flex}
+    .sheet{background:var(--card);width:min(980px,98%);max-height:90vh;overflow:auto;border-radius:12px;padding:18px}
+    .sheet .hero{display:flex;gap:18px}
+    .sheet .hero .big{flex:1;border-radius:12px;height:280px;background-size:cover;background-position:center}
+    .sheet .hero .info{width:320px}
+    .gallery-row{display:flex;gap:8px;margin-top:10px}
+    .gallery-row img{width:72px;height:60px;object-fit:cover;border-radius:8px;cursor:pointer}
+
+    .btn{display:inline-block;padding:8px 12px;border-radius:10px;background:var(--accent);color:white;text-decoration:none}
+
+    footer{margin-top:22px;text-align:center;color:var(--muted);font-size:13px}
+
+    @media (max-width:900px){
+      main{grid-template-columns:1fr}
+      .grid{grid-template-columns:repeat(1,1fr)}
+      .sheet .hero{flex-direction:column}
+      .sheet .hero .big{height:200px}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>Animal Encyclopedia</h1>
+        <div class="sub">Minimal • Modern • Educational</div>
+      </div>
+      <div style="text-align:right">
+        <small class="sub"></small>
+      </div>
+    </header>
+
+    <div class="search-row">
+      <div class="search">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="opacity:.6;margin-right:8px"><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/></svg>
+        <input id="searchInput" placeholder="Search animals by name or type (e.g. 'koala' or 'mammal')" aria-label="Search animals" />
+      </div>
+      <div class="chip" id="clearBtn">Clear</div>
+    </div>
+
+    <main>
+      <section>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:12px">
+          <strong style="font-size:14px">Categories</strong>
+          <div class="cats" id="categoryChips" style="margin-left:8px"></div>
+        </div>
+
+        <div class="grid" id="cardsGrid" style="margin-top:12px">
+          <!-- animal cards injected here -->
+        </div>
+
+        <div style="margin-top:16px;text-align:center">
+          <small class="sub">Tip: click a card to open the full animal profile.</small>
+        </div>
+      </section>
+
+      <aside>
+        <div class="panel">
+          <strong>Did you know?</strong>
+          <div class="trivia" id="triviaBox">Loading interesting facts...</div>
+        </div>
+
+        <div class="panel" style="margin-top:15px">
+          <strong>Photo Gallery</strong>
+          <div class="gallery" id="sideGallery"></div>
+        </div>
+            <div id="gifGallery" class="gif-gallery"></div>
+        <div class="panel" style="margin-top:12px">
+          <strong>Endangered Species</strong>
+          <div class="endangered-list" id="endangeredList"></div>
+        </div>
+      </aside>
+    </main>
+
+    <footer>
+      <div>© Animal Encyclopedia — Awareness & Education</div>
+    </footer>
+  </div>
+
+  <!-- Modal / Profile -->
+  <div class="modal" id="modal">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h2 id="profileTitle" style="margin:0">Profile</h2>
+        <div style="display:flex;gap:8px;align-items:center">
+          <a class="btn" id="externalLink" href="#" target="_blank" rel="noopener">More resources</a>
+          <div class="chip" id="closeModal" style="cursor:pointer">Close</div>
+        </div>
+      </div>
+
+      <div class="hero" style="margin-top:12px">
+        <div class="big" id="profileImage" style="background-image:url('')"></div>
+        <div class="info">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div class="name" id="profileName">Name</div>
+              <div class="tag" id="profileType">Type</div>
+            </div>
+            <div class="status" id="profileStatus">Status</div>
+          </div>
+
+          <div style="margin-top:12px;font-size:14px" id="profileDesc">Description</div>
+          <div style="margin-top:12px;font-size:13px;color:var(--muted)"><strong>Habitat:</strong> <span id="profileHabitat"></span></div>
+          <div style="margin-top:8px;font-size:13px;color:var(--muted)"><strong>Diet / Notes:</strong> <span id="profileDiet"></span></div>
+
+          <div class="gallery-row" id="profileThumbs"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    
+    /* Sample dataset - add or edit entries here */
+    const animals = [
+      {id:1,name:'African Elephant',type:'mammal',category:'Mammals',habitat:'Savannahs, forests',status:'Vulnerable',diet:'Herbivore',description:'The African elephant is the largest land animal on Earth. They are highly social and have complex behaviors.',image:'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/African_Elephant_%28Loxodonta_africana%29_male_%2817289351322%29.jpg/800px-African_Elephant_%28Loxodonta_africana%29_male_%2817289351322%29.jpg',images:[
+      ],resource:'https://en.wikipedia.org/wiki/African_elephant'},
+      {id:2,name:'Blue Whale',type:'mammal',category:'Mammals',habitat:'Oceans',status:'Endangered',diet:'Krill (filter feeder)',description:'Largest animal to have ever existed. Blue whales migrate across oceans.',image:'https://upload.wikimedia.org/wikipedia/commons/1/1c/Anim1754_-_Flickr_-_NOAA_Photo_Library.jpg',images:[
+        
+      ],resource:'https://en.wikipedia.org/wiki/Blue_whale'},
+      {id:3,name:'Koala',type:'mammal',category:'Mammals',habitat:'Eucalyptus forests',status:'Vulnerable',diet:'Eucalyptus leaves',description:'Koalas are arboreal marsupials native to Australia.',image:'https://upload.wikimedia.org/wikipedia/commons/4/49/Koala_climbing_tree.jpg',images:[
+        
+      ],resource:'https://en.wikipedia.org/wiki/Koala'},
+      {id:4,name:'Peregrine Falcon',type:'bird',category:'Birds',habitat:'Cliffs, urban areas',status:'Least Concern',diet:'Birds (predatory)',description:'Fastest bird — can dive at very high speeds to catch prey.',image:'https://upload.wikimedia.org/wikipedia/commons/9/9c/Falco_peregrinus_m_Humber_Bay_Park_Toronto.jpg',images:[
+        
+      ],resource:'https://en.wikipedia.org/wiki/Peregrine_falcon'},
+      {id:5,name:'Green Sea Turtle',type:'reptile',category:'Reptiles',habitat:'Tropical & subtropical seas',status:'Endangered',diet:'Seagrass and algae',description:'Sea turtles travel long distances between feeding grounds and nesting beaches.',image:'https://upload.wikimedia.org/wikipedia/commons/a/a3/Green_sea_turtle_%28Chelonia_mydas%29_Moorea.jpg',images:[
+        
+      ],resource:'https://en.wikipedia.org/wiki/Green_sea_turtle'},
+      {id:6,name:'Clownfish',type:'fish',category:'Fish',habitat:'Coral reefs',status:'Least Concern',diet:'Omnivore',description:'Known for symbiosis with sea anemones; popularized by films.',image:'https://upload.wikimedia.org/wikipedia/commons/a/ad/Amphiprion_ocellaris_%28Clown_anemonefish%29_by_Nick_Hobgood.jpg',images:[
+        
+      ],resource:'https://en.wikipedia.org/wiki/Amphiprioninae'},
+      {id:7,name:'Goliath Beetle',type:'insect',category:'Insects',habitat:'Tropical forests',status:'Least Concern',diet:'Sap, fruit',description:'One of the heaviest insects — Goliath beetles are impressive in size.',image:'https://upload.wikimedia.org/wikipedia/commons/d/d9/Goliath_beetle.jpg',images:[
+        
+      ],resource:'https://en.wikipedia.org/wiki/Goliath_beetle'},
+      {id:8,name:'Komodo Dragon',type:'reptile',category:'Reptiles',habitat:'Islands of Indonesia',status:'Vulnerable',diet:'Carnivore',description:'World\'s largest living lizard species.',image:'https://upload.wikimedia.org/wikipedia/commons/f/f5/202306_Varanus_komodoensis.jpg',images:[
+        
+      ],resource:'https://en.wikipedia.org/wiki/Komodo_dragon'},
+      {id:9,name:'Orangutan',type:'mammal',category:'Mammals',habitat:'Rainforests',status:'Critically Endangered',diet:'Fruits, leaves',description:'Highly intelligent great apes facing habitat loss.',image:'https://upload.wikimedia.org/wikipedia/commons/b/be/Orang_Utan%2C_Semenggok_Forest_Reserve%2C_Sarawak%2C_Borneo%2C_Malaysia.JPG',images:[
+        
+      ],resource:'https://en.wikipedia.org/wiki/Orangutan'},
+      {id:10,name:'Monarch Butterfly',type:'insect',category:'Insects',habitat:'Fields and meadows',status:'Near Threatened',diet:'Nectar',description:'Famous for long migrations across North America.',image:'https://upload.wikimedia.org/wikipedia/commons/6/63/Monarch_In_May.jpg',images:[
+        
+      ],resource:'https://en.wikipedia.org/wiki/Monarch_butterfly'},
+  {id:11,name:'Tiger',type:'mammal',category:'Mammals',habitat:'Tropical rainforests and grasslands',status:'Endangered',diet:'Carnivore',description:'Largest cat species, known for its striped coat.',image:'https://upload.wikimedia.org/wikipedia/commons/b/b0/Bengal_tiger_%28Panthera_tigris_tigris%29_female_3_crop.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Tiger'},
+
+  {id:12,name:'Dog',type:'mammal',category:'Mammals',habitat:'Domesticated worldwide',status:'Domesticated',diet:'Omnivore',description:'Human’s loyal companion with diverse breeds.',image:'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Huskiesatrest.jpg/1024px-Huskiesatrest.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Dog'},
+
+  {id:13,name:'Cat',type:'mammal',category:'Mammals',habitat:'Domesticated worldwide',status:'Domesticated',diet:'Carnivore',description:'Popular household pet known for agility and curiosity.',
+  image:'https://upload.wikimedia.org/wikipedia/commons/5/53/Sheba1.JPG',images:[],resource:'https://en.wikipedia.org/wiki/Cat'},
+
+  {id:14,name:'Giraffe',type:'mammal',category:'Mammals',habitat:'African savannas',status:'Vulnerable',diet:'Herbivore',description:'Tallest land animal with long neck for reaching tree leaves.',image:'https://upload.wikimedia.org/wikipedia/commons/9/9e/Giraffe_Mikumi_National_Park.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Giraffe'},
+
+  {id:15,name:'Horse',type:'mammal',category:'Mammals',habitat:'Grasslands',status:'Domesticated',diet:'Herbivore',description:'Domesticated animal known for strength and speed.',
+  image:'https://upload.wikimedia.org/wikipedia/commons/8/8c/Mares_and_Foals.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Horse'},
+
+  {id:16,name:'Panda',type:'mammal',category:'Mammals',habitat:'Mountain forests in China',status:'Vulnerable',diet:'Herbivore',description:'Known for black and white fur and love for bamboo.',
+  image:'https://upload.wikimedia.org/wikipedia/commons/0/0f/Grosser_Panda.JPG',images:[],resource:'https://en.wikipedia.org/wiki/Giant_panda'},
+
+  {id:17,name:'Parrot',type:'bird',category:'Birds',habitat:'Tropical and subtropical regions',status:'Least Concern',diet:'Omnivore',description:'Colorful bird known for its intelligence and mimicry.',
+  image:'https://cdn.shopify.com/s/files/1/0532/6648/1338/files/pexels-rutpratheep-11615612_480x480.jpg?v=1732137561',images:[],resource:'https://en.wikipedia.org/wiki/Parrot'},
+
+  {id:18,name:'Owl',type:'bird',category:'Birds',habitat:'Forests and deserts',status:'Least Concern',diet:'Carnivore',description:'Nocturnal bird with exceptional vision and hearing.',
+  image:'https://upload.wikimedia.org/wikipedia/commons/5/56/Bubo_bubo_sibiricus_-_01.JPG',images:[],resource:'https://en.wikipedia.org/wiki/Owl'},
+
+  {id:19,name:'Penguin',type:'bird',category:'Birds',habitat:'Antarctica and southern coasts',status:'Vulnerable',diet:'Carnivore',description:'Flightless bird adapted for swimming.',
+  image:'https://upload.wikimedia.org/wikipedia/commons/a/a3/Aptenodytes_forsteri_-Snow_Hill_Island%2C_Antarctica_-adults_and_juvenile-8.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Penguin'},
+
+  {id:20,name:'Flamingo',type:'bird',category:'Birds',habitat:'Lakes and lagoons',status:'Least Concern',diet:'Omnivore',description:'Pink-colored bird known for standing on one leg.',
+  image:'https://upload.wikimedia.org/wikipedia/commons/3/38/Flamingos_Laguna_Colorada.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Flamingo'},
+
+  {id:21,name:'Crocodile',type:'reptile',category:'Reptiles',habitat:'Rivers and swamps',status:'Least Concern',diet:'Carnivore',description:'Large aquatic reptile known for its powerful bite.',
+  image:'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bd/Nile_crocodile_head.jpg/1024px-Nile_crocodile_head.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Crocodile'},
+
+  {id:22,name:'Snake',type:'reptile',category:'Reptiles',habitat:'Forests, deserts, grasslands',status:'Varies',diet:'Carnivore',description:'Legless reptile found worldwide.',
+  image:'https://upload.wikimedia.org/wikipedia/commons/6/60/Trimeresurus_sabahi_fucatus%2C_Banded_pit_viper_-_Takua_Pa_District%2C_Phang-nga_Province_%2846710893582%29.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Snake'},
+
+  {id:23,name:'Turtle',type:'reptile',category:'Reptiles',habitat:'Oceans and freshwater',status:'Endangered',diet:'Omnivore',description:'Reptile with a hard protective shell.',
+  image:'https://upload.wikimedia.org/wikipedia/commons/3/34/Florida_Box_Turtle_Digon3.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Turtle'},
+
+  {id:24,name:'Chameleon',type:'reptile',category:'Reptiles',habitat:'Forests and jungles',status:'Least Concern',diet:'Insectivore',description:'Known for its ability to change colors.',
+  image:'https://upload.wikimedia.org/wikipedia/commons/a/a3/Chamaeleonidae-01.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Chameleon'},
+
+  {id:25,name:'Shark',type:'fish',category:'Fish',habitat:'Oceans',status:'Varies',diet:'Carnivore',description:'Predatory fish known for sharp teeth and speed.',
+  image:'https://upload.wikimedia.org/wikipedia/commons/0/08/Corl0207_%2828225976491%29.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Shark'},
+
+  {id:26,name:'Goldfish',type:'fish',category:'Fish',habitat:'Freshwater ponds and aquariums',status:'Domesticated',diet:'Omnivore',description:'Common pet fish known for bright orange color.',
+  image:'https://upload.wikimedia.org/wikipedia/commons/6/65/Gold_fish1.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Goldfish'},
+
+  {id:27,name:'Dolphin',type:'mammal',category:'Mammals',habitat:'Oceans and seas',status:'Least Concern',diet:'Carnivore',description:'Intelligent marine mammal known for playful behavior.',
+  image:'https://upload.wikimedia.org/wikipedia/commons/1/10/Tursiops_truncatus_01.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Dolphin'},
+
+  {id:28,name:'Butterfly',type:'insect',category:'Insects',habitat:'Gardens and meadows',status:'Least Concern',diet:'Nectar',description:'Insect with colorful wings and graceful flight.',
+  image:'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Fesoj_-_Papilio_machaon_%28by%29.jpg/800px-Fesoj_-_Papilio_machaon_%28by%29.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Butterfly'},
+
+  {id:29,name:'Bee',type:'insect',category:'Insects',habitat:'Gardens and forests',status:'Near Threatened',diet:'Nectar',description:'Important pollinator known for producing honey.',
+  image:'https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Tetragonula_carbonaria_%2814521993792%29.jpg/1024px-Tetragonula_carbonaria_%2814521993792%29.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Bee'},
+
+  {id:30,name:'Spider',type:'arachnid',category:'Insects',habitat:'Forests, houses, and gardens',status:'Least Concern',diet:'Carnivore',description:'A small arachnid known for spinning webs to catch prey.',
+  image:'https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Araneae3.jpg/800px-Araneae3.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Spider'},
+
+{id:31,name:'Cow',type:'mammal',category:'Mammals',habitat:'Farms and grasslands',status:'Domesticated',diet:'Herbivore',description:'A domesticated animal raised for milk, meat, and leather.',
+image:'https://upload.wikimedia.org/wikipedia/commons/8/8c/Cow_%28Fleckvieh_breed%29_Oeschinensee_Slaunger_2009-07-07.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Cattle'},
+
+{id:32,name:'Sheep',type:'mammal',category:'Mammals',habitat:'Grasslands and farms',status:'Domesticated',diet:'Herbivore',description:'A fluffy farm animal raised for wool and meat.',
+image:'https://upload.wikimedia.org/wikipedia/commons/2/2c/Flock_of_sheep.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Sheep'},
+
+{id:33,name:'Rabbit',type:'mammal',category:'Mammals',habitat:'Forests and meadows',status:'Least Concern',diet:'Herbivore',description:'A small animal known for its long ears and quick movements.',
+image:'https://upload.wikimedia.org/wikipedia/commons/1/1f/Oryctolagus_cuniculus_Rcdo.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Rabbit'},
+
+{id:34,name:'Pig',type:'mammal',category:'Mammals',habitat:'Farms and forests',status:'Domesticated',diet:'Omnivore',description:'A farm animal known for its intelligence and use in meat production.',
+image:'https://upload.wikimedia.org/wikipedia/commons/3/3e/Pig_farm_Vampula_1.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Pig'},
+
+{id:35,name:'Frog',type:'amphibian',category:'Amphibians',habitat:'Wetlands and ponds',status:'Least Concern',diet:'Insectivore',description:'An amphibian that can live both in water and on land, known for its jumping ability.',
+image:'https://upload.wikimedia.org/wikipedia/commons/0/01/Anoures.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Frog'},
+
+{id:36,name:'Deer',type:'mammal',category:'Mammals',habitat:'Forests and grasslands',status:'Least Concern',diet:'Herbivore',description:'A graceful herbivorous mammal known for its antlers and agility.',
+image:'https://cdn.britannica.com/40/109040-050-62EEDEA6/Male-white-tailed-deer.jpg?w=400&h=300&c=crop',images:[],resource:'https://en.wikipedia.org/wiki/Deer'},
+
+{id:37,name:'Duck',type:'bird',category:'Birds',habitat:'Lakes and ponds',status:'Least Concern',diet:'Omnivore',description:'A water bird known for its quacking sound and webbed feet.',
+image:'https://upload.wikimedia.org/wikipedia/commons/b/bf/Bucephala-albeola-010.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Duck'},
+
+{id:38,name:'Goose',type:'bird',category:'Birds',habitat:'Lakes and grasslands',status:'Least Concern',diet:'Herbivore',description:'A large waterfowl known for flying in flocks during migration.',
+image:'https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Anser_anser_1_%28Piotr_Kuczynski%29.jpg/1024px-Anser_anser_1_%28Piotr_Kuczynski%29.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Goose'},
+
+{id:39,name:'Donkey',type:'mammal',category:'Mammals',habitat:'Farms and deserts',status:'Domesticated',diet:'Herbivore',description:'A hardworking animal related to the horse, known for carrying loads.',
+image:'https://upload.wikimedia.org/wikipedia/commons/1/1a/Donkey_in_Clovelly%2C_North_Devon%2C_England.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Donkey'},
+
+{id:40,name:'Monkey',type:'mammal',category:'Mammals',habitat:'Forests and jungles',status:'Least Concern',diet:'Omnivore',description:'An intelligent animal known for climbing trees and social behavior.',
+image:'https://upload.wikimedia.org/wikipedia/commons/4/43/Bonnet_macaque_%28Macaca_radiata%29_Photograph_By_Shantanu_Kuveskar.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Monkey'},
+
+{id:41,name:'Goat',type:'mammal',category:'Mammals',habitat:'Mountains and farms',status:'Domesticated',diet:'Herbivore',description:'A farm animal that provides milk, meat, and wool.',
+image:'https://upload.wikimedia.org/wikipedia/commons/b/b2/Hausziege_04.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Goat'},
+
+{id:42,name:'Chicken',type:'bird',category:'Birds',habitat:'Farms and backyards',status:'Domesticated',diet:'Omnivore',description:'A common farm bird raised for meat and eggs.',
+image:'https://upload.wikimedia.org/wikipedia/commons/8/84/Male_and_female_chicken_sitting_together.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Chicken'},
+
+{id:43,name:'Catfish',type:'fish',category:'Fish',habitat:'Rivers and lakes',status:'Least Concern',diet:'Omnivore',description:'A freshwater fish known for its whisker-like barbels.',
+image:'https://upload.wikimedia.org/wikipedia/commons/d/d8/Siluriformes.png',images:[],resource:'https://en.wikipedia.org/wiki/Catfish'},
+
+{id:44,name:'Seagull',type:'bird',category:'Birds',habitat:'Coastal areas',status:'Least Concern',diet:'Omnivore',description:'A seabird often seen near beaches, scavenging for food.',
+image:'https://upload.wikimedia.org/wikipedia/commons/8/8a/European_herring_gull_%28Larus_argentatus%29._Saint-Malo%2C_France.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Gull'},
+
+{id:45,name:'Crab',type:'crustacean',category:'Crustaceans',habitat:'Beaches and oceans',status:'Least Concern',diet:'Omnivore',description:'A crustacean with claws and a hard shell found near the sea.',
+image:'https://upload.wikimedia.org/wikipedia/commons/8/8a/Gecarcinus_quadratus_%28Nosara%29.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Crab'},
+
+{id:46,name:'Octopus',type:'mollusk',category:'Mollusks',habitat:'Oceans',status:'Least Concern',diet:'Carnivore',description:'An intelligent sea creature known for its eight arms and camouflage.',
+image:'https://upload.wikimedia.org/wikipedia/commons/5/57/Octopus2.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Octopus'},
+
+{id:47,name:'Starfish',type:'echinoderm',category:'Echinoderms',habitat:'Oceans',status:'Least Concern',diet:'Carnivore',description:'A marine animal with five arms that can regenerate.',
+image:'https://upload.wikimedia.org/wikipedia/commons/c/c7/Starfish_montage.png',images:[],resource:'https://en.wikipedia.org/wiki/Starfish'},
+
+{id:48,name:'Jellyfish',type:'cnidarian',category:'Cnidarians',habitat:'Oceans',status:'Least Concern',diet:'Carnivore',description:'A soft-bodied sea animal known for its tentacles and sting.',
+image:'https://upload.wikimedia.org/wikipedia/commons/4/44/Jelly_cc11.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Jellyfish'},
+
+{id:49,name:'Fox',type:'mammal',category:'Mammals',habitat:'Forests, grasslands, and urban areas',status:'Least Concern',diet:'Omnivore',description:'A clever and adaptable animal known for its bushy tail and intelligence.',
+image:'https://upload.wikimedia.org/wikipedia/commons/3/30/Vulpes_vulpes_ssp_fulvus.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Fox'},
+
+{id:50,name:'Zebra',type:'mammal',category:'Mammals',habitat:'Savannas and grasslands',status:'Near Threatened',diet:'Herbivore',description:'An African animal known for its black and white stripes.',
+image:'https://upload.wikimedia.org/wikipedia/commons/9/96/Plains_Zebra_Equus_quagga_cropped.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Zebra'},
+
+{id:51,name:'Lion',type:'mammal',category:'Mammals',habitat:'Savannas and grasslands',status:'Vulnerable',diet:'Carnivore',description:'A large cat known as the king of the jungle, famous for its mane and roar.',
+image:'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/020_The_lion_king_Snyggve_in_the_Serengeti_National_Park_Photo_by_Giles_Laurent.jpg/1024px-020_The_lion_king_Snyggve_in_the_Serengeti_National_Park_Photo_by_Giles_Laurent.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Lion'},
+
+{id:52,name:'Bear',type:'mammal',category:'Mammals',habitat:'Forests and mountains',status:'Varies by species',diet:'Omnivore',description:'A large, powerful mammal with thick fur, known for hibernating during winter.',
+image:'https://upload.wikimedia.org/wikipedia/commons/9/9e/Ours_brun_parcanimalierpyrenees_1.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Bear'},
+
+{id:53,name:'Wolf',type:'mammal',category:'Mammals',habitat:'Forests and tundras',status:'Least Concern',diet:'Carnivore',description:'A wild canine known for its pack behavior and howling communication.',
+image:'https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Eurasian_wolf_2.jpg/1024px-Eurasian_wolf_2.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Wolf'},
+
+{id:54,name:'Cheetah',type:'mammal',category:'Mammals',habitat:'Grasslands and savannas',status:'Vulnerable',diet:'Carnivore',description:'The fastest land animal, known for its incredible speed and spotted coat.',
+image:'https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Male_cheetah_facing_left_in_South_Africa.jpg/250px-Male_cheetah_facing_left_in_South_Africa.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Cheetah'},
+
+{id:55,name:'Leopard',type:'mammal',category:'Mammals',habitat:'Forests and grasslands',status:'Vulnerable',diet:'Carnivore',description:'A large cat known for its agility and beautiful spotted fur.',
+image:'https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/African_leopard_male_%28cropped%29.jpg/250px-African_leopard_male_%28cropped%29.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Leopard'},
+
+{id:56,name:'Hippopotamus',type:'mammal',category:'Mammals',habitat:'Rivers and lakes',status:'Vulnerable',diet:'Herbivore',description:'A large semi-aquatic mammal known for its size and strong jaws.',
+image:'https://upload.wikimedia.org/wikipedia/commons/f/f2/Portrait_Hippopotamus_in_the_water.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Hippopotamus'},
+
+{id:57,name:'Rhinoceros',type:'mammal',category:'Mammals',habitat:'Grasslands and savannas',status:'Endangered',diet:'Herbivore',description:'A large herbivore recognized by its horned snout.',
+image:'https://upload.wikimedia.org/wikipedia/commons/b/b7/Rhino_collage.png',images:[],resource:'https://en.wikipedia.org/wiki/Rhinoceros'},
+
+{id:58,name:'Camel',type:'mammal',category:'Mammals',habitat:'Deserts',status:'Least Concern',diet:'Herbivore',description:'A desert mammal known for its humps and ability to survive without water.',
+image:'https://upload.wikimedia.org/wikipedia/commons/4/43/07._Camel_Profile%2C_near_Silverton%2C_NSW%2C_07.07.2007.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Camel'},
+
+{id:59,name:'Kangaroo',type:'mammal',category:'Mammals',habitat:'Grasslands and forests',status:'Least Concern',diet:'Herbivore',description:'An Australian marsupial known for its powerful legs and pouch.',
+image:'https://upload.wikimedia.org/wikipedia/commons/0/0c/Kangaroo_Australia_01_11_2008_-_retouch.JPG',images:[],resource:'https://en.wikipedia.org/wiki/Kangaroo'},
+
+{id:60,name:'Dove',type:'bird',category:'Birds',habitat:'Forests and urban areas',status:'Least Concern',diet:'Herbivore',description:'A symbol of peace, known for its gentle nature and cooing sound.',
+image:'https://upload.wikimedia.org/wikipedia/commons/f/ff/Treron_vernans_male_-_Kent_Ridge_Park.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Dove'},
+
+{id:61,name:'Bat',type:'mammal',category:'Mammals',habitat:'Caves and forests',status:'Least Concern',diet:'Omnivore',description:'The only flying mammal, active mostly at night using echolocation.',
+image:'https://upload.wikimedia.org/wikipedia/commons/4/41/Desmo-Flug-01.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Bat'},
+
+{id:62,name:'Squirrel',type:'mammal',category:'Mammals',habitat:'Forests and urban areas',status:'Least Concern',diet:'Omnivore',description:'A small agile rodent known for climbing trees and storing nuts.',
+image:'https://upload.wikimedia.org/wikipedia/commons/6/68/Sciuridae.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Squirrel'},
+
+{id:63,name:'Mouse',type:'mammal',category:'Mammals',habitat:'Fields and houses',status:'Least Concern',diet:'Omnivore',description:'A small rodent found worldwide, known for its agility and curiosity.',
+image:'https://upload.wikimedia.org/wikipedia/commons/0/0d/%D0%9C%D1%8B%D1%88%D1%8C_2.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Mouse'},
+
+{id:64,name:'Rat',type:'mammal',category:'Mammals',habitat:'Urban areas and sewers',status:'Least Concern',diet:'Omnivore',description:'A larger rodent similar to a mouse, known for its adaptability.',
+image:'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Brown_Rat_%28Rattus_norvegicus%29.jpg/1024px-Brown_Rat_%28Rattus_norvegicus%29.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Rat'},
+
+{id:65,name:'Elephant Seal',type:'mammal',category:'Mammals',habitat:'Coastal waters and beaches',status:'Least Concern',diet:'Carnivore',description:'A large marine mammal known for its size and inflatable nose in males.',
+image:'https://upload.wikimedia.org/wikipedia/commons/d/d8/See_elefanten_edit.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Elephant_seal'},
+
+{id:66,name:'Sea Lion',type:'mammal',category:'Mammals',habitat:'Coastal waters',status:'Least Concern',diet:'Carnivore',description:'A marine mammal known for its intelligence and playful behavior.',
+image:'https://upload.wikimedia.org/wikipedia/commons/7/74/California_sea_lion_in_La_Jolla_%2870568%29.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Sea_lion'},
+
+{id:67,name:'Walrus',type:'mammal',category:'Mammals',habitat:'Arctic seas',status:'Vulnerable',diet:'Carnivore',description:'A large marine mammal with tusks and whiskers, found in Arctic regions.',
+image:'https://upload.wikimedia.org/wikipedia/commons/8/87/Walrus_in_the_Russian_Arctic_National_Park%2C_Novaya_Zemlya_2015-2.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Walrus'},
+
+{id:68,name:'Polar Bear',type:'mammal',category:'Mammals',habitat:'Arctic ice and coasts',status:'Vulnerable',diet:'Carnivore',description:'A large white bear adapted to cold climates, expert swimmer and hunter.',
+image:'https://upload.wikimedia.org/wikipedia/commons/6/66/Polar_Bear_-_Alaska_%28cropped%29.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Polar_bear'},
+
+{id:69,name:'Raccoon',type:'mammal',category:'Mammals',habitat:'Forests and cities',status:'Least Concern',diet:'Omnivore',description:'A nocturnal animal known for its masked face and dexterous paws.',
+image:'https://upload.wikimedia.org/wikipedia/commons/3/3e/Raccoon_in_Central_Park_%2835264%29.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Raccoon'},
+
+{id:70,name:'Skunk',type:'mammal',category:'Mammals',habitat:'Forests and grasslands',status:'Least Concern',diet:'Omnivore',description:'A small mammal known for its black and white fur and strong odor defense.',
+image:'https://upload.wikimedia.org/wikipedia/commons/5/57/Striped_Skunk.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Skunk'},
+
+{id:71,name:'Hedgehog',type:'mammal',category:'Mammals',habitat:'Grasslands and gardens',status:'Least Concern',diet:'Insectivore',description:'A small spiny mammal that curls into a ball for protection.',
+image:'https://upload.wikimedia.org/wikipedia/commons/7/72/Igel.JPG',images:[],resource:'https://en.wikipedia.org/wiki/Hedgehog'},
+
+{id:72,name:'Porcupine',type:'mammal',category:'Mammals',habitat:'Forests and rocky areas',status:'Least Concern',diet:'Herbivore',description:'A rodent with sharp quills for defense against predators.',
+image:'https://upload.wikimedia.org/wikipedia/commons/8/8c/Erethizon_dorsatum_-_Prince_Rupert.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Porcupine'},
+
+{id:73,name:'Beaver',type:'mammal',category:'Mammals',habitat:'Rivers and wetlands',status:'Least Concern',diet:'Herbivore',description:'A large rodent known for building dams and lodges in water.',
+image:'https://upload.wikimedia.org/wikipedia/commons/6/6b/American_Beaver.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Beaver'},
+
+{id:74,name:'Otter',type:'mammal',category:'Mammals',habitat:'Rivers and coastal waters',status:'Least Concern',diet:'Carnivore',description:'A playful aquatic mammal known for its sleek body and social behavior.',
+image:'https://upload.wikimedia.org/wikipedia/commons/d/d3/Fischotter%2C_Lutra_Lutra.JPG',images:[],resource:'https://en.wikipedia.org/wiki/Otter'},
+
+{id:75,name:'Sloth',type:'mammal',category:'Mammals',habitat:'Tropical forests',status:'Least Concern',diet:'Herbivore',description:'A slow-moving mammal that spends most of its time hanging from trees.',
+image:'https://upload.wikimedia.org/wikipedia/commons/b/be/Bicho-pregui%C3%A7a_3.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Sloth'},
+
+{id:76,name:'Meerkat',type:'mammal',category:'Mammals',habitat:'Deserts and grasslands',status:'Least Concern',diet:'Insectivore',description:'A small social mammal that stands upright to watch for danger.',
+image:'https://upload.wikimedia.org/wikipedia/commons/9/9a/Meerkat_%28Suricata_suricatta%29_Tswalu.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Meerkat'},
+
+{id:77,name:'Peacock',type:'bird',category:'Birds',habitat:'Forests and gardens',status:'Least Concern',diet:'Omnivore',description:'A large bird known for its colorful tail feathers and courtship display.',
+image:'https://upload.wikimedia.org/wikipedia/commons/c/c5/Peacock_Plumage.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Peafowl'},
+
+{id:78,name:'Swan',type:'bird',category:'Birds',habitat:'Lakes and rivers',status:'Least Concern',diet:'Herbivore',description:'A large graceful bird with a long neck, symbol of beauty and elegance.',
+image:'https://upload.wikimedia.org/wikipedia/commons/7/7b/Mute_Swan_Emsworth2.JPG',images:[],resource:'https://en.wikipedia.org/wiki/Swan'},
+
+{id:79,name:'Eagle',type:'bird',category:'Birds',habitat:'Mountains and forests',status:'Least Concern',diet:'Carnivore',description:'A powerful bird of prey with keen eyesight and strong wings.',
+image:'https://upload.wikimedia.org/wikipedia/commons/6/60/Eagles_together.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Eagle'},
+
+{id:80,name:'Hawk',type:'bird',category:'Birds',habitat:'Forests and open areas',status:'Least Concern',diet:'Carnivore',description:'A bird of prey known for its speed and sharp vision.',
+image:'https://upload.wikimedia.org/wikipedia/commons/8/81/Northern_Goshawk_ad_M2.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Hawk'},
+
+{id:81,name:'Crow',type:'bird',category:'Birds',habitat:'Urban areas and forests',status:'Least Concern',diet:'Omnivore',description:'An intelligent black bird known for problem-solving and mimicry.',
+image:'https://upload.wikimedia.org/wikipedia/commons/a/a9/Corvus_corone_-near_Canford_Cliffs%2C_Poole%2C_England-8.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Crow'},
+
+{id:82,name:'Pigeon',type:'bird',category:'Birds',habitat:'Cities and cliffs',status:'Least Concern',diet:'Herbivore',description:'A common bird found in cities, known for its homing ability.',
+image:'https://upload.wikimedia.org/wikipedia/commons/f/ff/Treron_vernans_male_-_Kent_Ridge_Park.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Pigeon'},
+
+{id:83,name:'Rooster',type:'bird',category:'Birds',habitat:'Farms and villages',status:'Domesticated',diet:'Omnivore',description:'A male chicken known for crowing at dawn.',
+image:'https://upload.wikimedia.org/wikipedia/commons/8/84/Male_and_female_chicken_sitting_together.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Rooster'},
+
+{id:84,name:'Turkey',type:'bird',category:'Birds',habitat:'Forests and farms',status:'Domesticated',diet:'Omnivore',description:'A large bird known for its fan-shaped tail and gobbling sound.',
+image:'https://upload.wikimedia.org/wikipedia/commons/8/8a/Male_wild_turkey_%28Meleagris_gallopavo%29_strutting.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Turkey_(bird)'},
+
+{id:85,name:'Lizard',type:'reptile',category:'Reptiles',habitat:'Deserts, forests, and rocks',status:'Least Concern',diet:'Insectivore',description:'A small cold-blooded reptile that can regenerate its tail.',
+image:'https://upload.wikimedia.org/wikipedia/commons/1/14/Lizard_Collage.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Lizard'},
+
+{id:86,name:'Gecko',type:'reptile',category:'Reptiles',habitat:'Tropical forests and houses',status:'Least Concern',diet:'Insectivore',description:'A small nocturnal lizard known for its sticky feet and chirping sounds.',
+image:'https://upload.wikimedia.org/wikipedia/commons/c/c3/Phelsuma_l._laticauda.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Gecko'},
+
+{id:87,name:'Salamander',type:'amphibian',category:'Amphibians',habitat:'Wetlands and forests',status:'Least Concern',diet:'Carnivore',description:'An amphibian that can regenerate lost limbs.',
+image:'https://upload.wikimedia.org/wikipedia/commons/b/b2/SpottedSalamander.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Salamander'},
+
+{id:88,name:'Toad',type:'amphibian',category:'Amphibians',habitat:'Forests and wetlands',status:'Least Concern',diet:'Insectivore',description:'A small amphibian with dry, bumpy skin and a croaking sound.',
+image:'https://upload.wikimedia.org/wikipedia/commons/3/31/Bombina_bombina_1_%28Marek_Szczepanek%29.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Toad'},
+
+{id:89,name:'Carp',type:'fish',category:'Fish',habitat:'Lakes and rivers',status:'Least Concern',diet:'Omnivore',description:'A freshwater fish commonly found in ponds and rivers.',
+image:'https://upload.wikimedia.org/wikipedia/commons/a/ac/Unsere_S%C3%BC%C3%9Fwasserfische_%28Tafel_33%29_%286102602781%29.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Carp'},
+
+{id:90,name:'Tuna',type:'fish',category:'Fish',habitat:'Oceans',status:'Vulnerable',diet:'Carnivore',description:'A large fast-swimming fish popular for food.',
+image:'https://upload.wikimedia.org/wikipedia/commons/2/21/Tuna_assortment.png',images:[],resource:'https://en.wikipedia.org/wiki/Tuna'},
+
+{id:91,name:'Salmon',type:'fish',category:'Fish',habitat:'Oceans and rivers',status:'Least Concern',diet:'Carnivore',description:'A migratory fish known for swimming upstream to spawn.',
+image:'https://upload.wikimedia.org/wikipedia/commons/3/39/Salmo_salar.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Salmon'},
+
+{id:92,name:'Swordfish',type:'fish',category:'Fish',habitat:'Oceans',status:'Least Concern',diet:'Carnivore',description:'A large predatory fish recognized by its long, flat bill.',
+image:'https://upload.wikimedia.org/wikipedia/commons/5/5b/Xiphias_gladius_Linnaeus%2C_1758_2599925021.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Swordfish'},
+
+{id:93,name:'Lobster',type:'crustacean',category:'Fish',habitat:'Oceans and rocky coasts',status:'Least Concern',diet:'Omnivore',description:'A marine crustacean with claws, often found on the sea floor.',
+image:'https://upload.wikimedia.org/wikipedia/commons/0/0b/KreeftbijDenOsse.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Lobster'},
+
+{id:94,name:'Shrimp',type:'crustacean',category:'Fish',habitat:'Oceans and rivers',status:'Least Concern',diet:'Omnivore',description:'A small aquatic crustacean important in marine ecosystems.',
+image:'https://upload.wikimedia.org/wikipedia/commons/b/b9/Palaemon_serratus_Croazia.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Shrimp'},
+
+{id:95,name:'Squid',type:'mollusk',category:'Fish',habitat:'Oceans',status:'Least Concern',diet:'Carnivore',description:'A soft-bodied marine animal with tentacles and ink defense.',
+image:'https://upload.wikimedia.org/wikipedia/commons/e/e1/Sepioteuthis_sepioidea_%28Caribbean_Reef_Squid%29.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Squid'},
+
+{id:96,name:'Ant',type:'insect',category:'Insects',habitat:'Soil, wood, and urban areas',status:'Least Concern',diet:'Omnivore',description:'A small social insect known for teamwork and colony life.',
+image:'https://upload.wikimedia.org/wikipedia/commons/9/94/Fire_ants_01.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Ant'},
+
+{id:97,name:'Grasshopper',type:'insect',category:'Insects',habitat:'Grasslands and fields',status:'Least Concern',diet:'Herbivore',description:'An insect known for its long legs and jumping ability.',
+image:'https://upload.wikimedia.org/wikipedia/commons/b/b7/American_Bird_Grasshopper.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Grasshopper'},
+
+{id:98,name:'Moth',type:'insect',category:'Insects',habitat:'Forests and urban areas',status:'Least Concern',diet:'Herbivore',description:'A nocturnal insect attracted to light, related to butterflies.',
+image:'https://upload.wikimedia.org/wikipedia/commons/b/b1/Attacus_atlas_%2815050883139%29.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Moth'},
+
+{id:99,name:'Dragonfly',type:'insect',category:'Insects',habitat:'Lakes and wetlands',status:'Least Concern',diet:'Carnivore',description:'A fast-flying insect known for its long body and colorful wings.',
+image:'https://upload.wikimedia.org/wikipedia/commons/d/de/Gemeine_Heidelibelle_%28Sympetrum_vulgatum%29_4.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Dragonfly'},
+
+{id:100,name:'Alligator',type:'reptile',category:'Reptiles',habitat:'Rivers, swamps, and wetlands',status:'Least Concern',diet:'Carnivore',description:'A large semi-aquatic reptile with a powerful tail and strong jaws, similar to a crocodile.',
+image:'https://www.treehugger.com/thmb/JouyRMnsfs4L3br3DJkFV6X8hio=/750x0/filters:no_upscale():max_bytes(150000):strip_icc():format(webp)/10-b2f827467d3c409285289b7cfa4b7c51.jpg',images:[],resource:'https://en.wikipedia.org/wiki/Alligator'},
+
+    ];
+
+    const categories = Array.from(new Set(animals.map(a=>a.category))).sort();
+    const trivia = [
+  'A group of flamingos is called a "flamboyance".',
+  'Octopuses have three hearts and blue blood.',
+  'Elephants can recognize themselves in a mirror — a sign of self-awareness.',
+  'Sea turtles return to the same beach where they were born to lay eggs.',
+  'Some frogs freeze during winter and thaw in spring, still alive.',
+  'Koalas sleep for up to 22 hours a day.',
+  'Slugs have four noses.',
+  'Butterflies taste with their feet.',
+  'A shrimp’s heart is located in its head.',
+  'Giraffes only need 5 to 30 minutes of sleep each day.',
+  'A newborn kangaroo is about the size of a grain of rice.',
+  'An ostrich’s eye is bigger than its brain.',
+  'Bees can recognize human faces.',
+  'A snail can sleep for three years.',
+  'Crows can remember and recognize human faces.',
+  'Sea otters use rocks to crack open shellfish.',
+  'Penguins propose to their mates with pebbles.',
+  'Sharks existed before trees.',
+  'A crocodile can’t stick its tongue out.',
+  'A blue whale’s tongue weighs as much as an elephant.',
+  'Bats are the only mammals that can truly fly.',
+  'Horses can sleep both standing up and lying down.',
+  'Cats can rotate their ears 180 degrees.',
+  'Dogs’ sense of smell is about 40 times stronger than humans’.',
+  'A chameleon’s tongue can be twice the length of its body.',
+  'Owls can turn their heads up to 270 degrees.',
+  'Tigers have striped skin, not just striped fur.',
+  'Dolphins sleep with one eye open.',
+  'A baby panda is smaller than a mouse at birth.',
+  'Male seahorses carry and give birth to babies.',
+  'Frogs can breathe through their skin.',
+  'Camels can close their nostrils to keep out sand.',
+  'Ants never sleep.',
+  'A cheetah can go from 0 to 100 km/h in just 3 seconds.',
+  'A group of owls is called a "parliament".',
+  'Lobsters taste with their legs.',
+  'An elephant’s trunk has over 40,000 muscles.',
+  'Sea otters hold hands when they sleep to avoid drifting apart.',
+  'A hippo’s sweat is pink and acts as sunscreen.',
+  'Some turtles can breathe through their butts.',
+  'Polar bears have black skin under their white fur.',
+  'A rhinoceros’ horn is made of keratin, the same material as human hair.',
+  'Beavers’ teeth never stop growing.',
+  'Starfish can regenerate lost arms.',
+  'Hedgehogs have about 5,000 spines on their backs.',
+  'Cows have best friends and get stressed when separated.',
+  'Parrots can live for over 80 years.',
+  'Flies always take off backwards.',
+  'Goldfish can see ultraviolet and infrared light.',
+  'Owls have tube-shaped eyes, not round ones, helping them see long distances.'
+];
+
+
+    // DOM refs
+    const cardsGrid = document.getElementById('cardsGrid');
+    const categoryChips = document.getElementById('categoryChips');
+    const sideGallery = document.getElementById('sideGallery');
+    const endangeredList = document.getElementById('endangeredList');
+    const triviaBox = document.getElementById('triviaBox');
+    const searchInput = document.getElementById('searchInput');
+    const clearBtn = document.getElementById('clearBtn');
+
+    let activeCategory = null;
+    let activeQuery = '';
+
+    function renderCategories(){
+      const allChip = document.createElement('div');
+      allChip.className='chip';
+      allChip.textContent='All';
+      allChip.onclick = ()=>{ activeCategory=null; renderCards(); highlightCat(); };
+      categoryChips.appendChild(allChip);
+      categories.forEach(cat=>{
+        const d = document.createElement('div');
+        d.className='chip';
+        d.textContent=cat;
+        d.onclick = ()=>{ activeCategory=cat; renderCards(); highlightCat(); };
+        categoryChips.appendChild(d);
+      });
+    }
+    function highlightCat(){
+      Array.from(categoryChips.children).forEach(ch=>{
+        ch.style.background = (activeCategory && ch.textContent===activeCategory)?'var(--accent)':'transparent';
+        ch.style.color = (activeCategory && ch.textContent===activeCategory)?'white':'inherit';
+      });
+    }
+
+    function renderCards(){
+      cardsGrid.innerHTML='';
+      const query = activeQuery.trim().toLowerCase();
+      const list = animals.filter(a=>{
+        if(activeCategory && a.category!==activeCategory) return false;
+        if(!query) return true;
+        return a.name.toLowerCase().includes(query) || a.type.toLowerCase().includes(query) || a.category.toLowerCase().includes(query);
+      });
+      if(list.length===0){
+        cardsGrid.innerHTML='<div style="grid-column:1/-1;padding:28px;background:var(--card);border-radius:12px;text-align:center;color:var(--muted)">No animals found.</div>';
+        return;
+      }
+      list.forEach(a=>{
+        const c = document.createElement('div'); c.className='card';
+        const t = document.createElement('div'); t.className='thumb'; t.style.backgroundImage=`url('${a.image}')`;
+        const m = document.createElement('div'); m.className='meta';
+        m.innerHTML = `<div class="name">${a.name}</div><div class="tag">${a.category} • ${a.habitat}</div><div style="margin-top:6px;color:var(--muted);font-size:13px">${a.description.slice(0,120)}${a.description.length>120?'...':''}</div>`;
+        c.appendChild(t); c.appendChild(m);
+        c.onclick = ()=> openProfile(a.id);
+        cardsGrid.appendChild(c);
+      });
+    }
+
+    function renderSideGallery() {
+  sideGallery.innerHTML = '';
+
+  // Get all available image URLs
+  const pics = animals
+    .filter(a => a.image && a.image.trim() !== '')
+    .map(a => a.image);
+
+  if (pics.length === 0) return; // no images, stop
+
+  // Shuffle the pictures randomly
+  const shuffled = pics.sort(() => 0.5 - Math.random());
+
+  // Square slideshow container
+  sideGallery.style.width = '100%';
+  sideGallery.style.aspectRatio = '1 / 1'; // keeps it square
+  sideGallery.style.maxWidth = '500px'; // optional: limit max size
+  sideGallery.style.margin = 'auto';
+  sideGallery.style.position = 'relative';
+  sideGallery.style.overflow = 'hidden';
+  sideGallery.style.borderRadius = '20px';
+  sideGallery.style.boxShadow = '0 6px 20px rgba(0,0,0,0.25)';
+
+  // Create the image element
+  const img = document.createElement('img');
+  img.src = shuffled[0];
+  img.alt = 'Animal slideshow image';
+  img.style.width = '100%';
+  img.style.height = '100%';
+  img.style.objectFit = 'cover'; // keeps square shape while fitting image
+  img.style.borderRadius = '20px';
+  img.style.transition = 'opacity 1s ease-in-out';
+  img.style.position = 'absolute';
+  img.style.top = '0';
+  img.style.left = '0';
+  sideGallery.appendChild(img);
+
+  // Random slideshow logic
+  setInterval(() => {
+    const randomIndex = Math.floor(Math.random() * shuffled.length);
+    img.style.opacity = 0;
+    setTimeout(() => {
+      img.src = shuffled[randomIndex];
+      img.style.opacity = 1;
+    }, 800);
+  }, 4000); // changes every 4 seconds
+}
+
+function renderGifGallery() {
+  const gifGallery = document.getElementById('gifGallery');
+  gifGallery.innerHTML = '';
+
+  // Add at least 20 animal GIF links (you can replace them later)
+  const gifList = [
+'https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExcWVmYXU3enh1cXM0aGZmbmx0dnBsNTFydHhyMHhiZDF6cHJweG9vbCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/bWAicQQ4uhYo4ENAwN/giphy.gif',
+'https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExaHRrNjQ2Mm9yMm9yb2FxZTZ2aGQ3NzlnM201MWVnZm15dWdwbGE1YyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/n8x2aZCaCXAQEW6MKR/giphy.gif',
+'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExNG56NzBoeTllbnl1d2RlbHNkbW9jcGo1cjV0aWlremF1bWw5ZzlrdCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ONuQzM11fjvoY/giphy.gif',
+'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExNjBucjdoanowZG1rZW10cm9xNHUxYXVhaXlhcnB3aWFwazRudGU3MSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/vVWUEFDUVItxu/giphy.gif',
+'https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExc2FtZjRmdGlma3g1bTRzOTRkZXducmN4anliZWh2dTVuMTdvNnV6NyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/JnvlBMZ5R0GyI/giphy.gif',
+'https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExcWZhODRwZ2U3M3UxYm90MWw1eGkwdGt2dzV4cGhub2Z1aW5pbWZhbSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/2IodXMfbcVVrW/giphy.gif',
+'https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHFsbnQ2andoY2tsYnFmbjdnaHIzanJsZWJhdDc3cGYzZ3B3OWFydyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/REoJU89DSsTAH4pUpr/giphy.gif',
+'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExdmwwdWtiY294dTg5endra2U0c2lxeWJhcHd6NmFwaGVwcG5jejlvdyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3HMiEFzstXigw/giphy.gif',
+'https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExOGMyaGVpbXJzMng3anNrZ2dpN2NuYzJlc2NrbnFqb3lvcHg5anNoYyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/8LsOY7dirIH28/giphy.gif',
+'https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExa2N6ejdtYTA0ZHBhbzVxb3NndDB5dnI3ODBvdXJoMTJvYW13M2l4NSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Su0MsE8EGGylrOPwab/giphy.gif',
+'https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExNWs1MGhtdmtqam5oY2R4aWE2dWU2cWlibHo5eTZhMjd5OGJ1OGs5MCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/rlkpAmX3gaLWE/giphy.gif',
+'https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExc2J0d2Zvcjh4ZThwZHBxZzczZTZ3ZHgwdGR4YWMwN24zZDEydGdueCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/1PloqVCh3IDba/giphy.gif',
+'https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExcXp5Zm40Z3R1cWxvMDRleDJtOTA0OXU0N3p2aXMxcW1xMGhueDZhMCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/vWa9JunuGg8w0/giphy.gif',
+'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExeHlyazllM3o2MXNqMnkxdmw3eDQ1ZzA3d2U1bHRsbWEweWJnZjU3OSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/11ooClFJ4YqvXa/giphy.gif',
+'https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExMGpqZmN1ODBqeWY2cGZvMDFtajgydXJwcGdvOXNiMG52bTZiZm0wcyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Q7hC4N1EVgV9u/giphy.gif',
+'https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExYzlxamV5dmNnbDY5MjFqbTBsemVvbjB6dnhxM2U3dG1zMGoxdW1xMCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/GIFbrFpayHUwo/giphy.gif',
+'https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExa21jYTVycTI1NHFxeGVvZmJ5ZXpjMnE1MDJsMXVybmtkaDV1dWh2biZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/c2ET3qbFVjkSLIyxFU/giphy.gif',
+'https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExY2kxNXMzOXRjbXhyazZkaWszOHo3ZjBsb3I5cjdkZjJkd2V5YTgyZiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/26gs6RnXEtZEIVfkQ/giphy.gif',
+'https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExZ3gzYm0wM3ljMDBkZ2kxNjltbnRiaTd2M3ZxdzZ0dXlnOHlnMnlvNyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Ehl2Haxp48wP6/giphy.gif',
+'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExcGFtd3g1ZXgyeTh0dXk5bG0xdXlpa2hwaHVpZmxxY2U1dmNnMjJ5cyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/S5eApICuGcSWs/giphy.gif',
+
+  ];
+
+  // Add 4 random GIFs at a time
+  const randomGifs = gifList.sort(() => 0.5 - Math.random()).slice(0, 4);
+  randomGifs.forEach(gif => {
+    const img = document.createElement('img');
+    img.src = gif;
+    gifGallery.appendChild(img);
+  });
+
+  // Automatically refresh GIFs every 5 seconds
+  setInterval(() => {
+    gifGallery.innerHTML = '';
+    const randomAgain = gifList.sort(() => 0.5 - Math.random()).slice(0, 4);
+    randomAgain.forEach(gif => {
+      const img = document.createElement('img');
+      img.src = gif;
+      gifGallery.appendChild(img);
+    });
+  }, 5000);
+}
+
+
+    
+
+    function renderEndangered(){
+      endangeredList.innerHTML='';
+      const list = animals.filter(a=>['Endangered','Critically Endangered','Vulnerable','Near Threatened'].includes(a.status));
+      list.slice(0,100).forEach(a=>{
+        const d = document.createElement('div'); d.style.padding='8px 0';
+        d.innerHTML = `<div style="display:flex;gap:8px;align-items:center"><div style="width:56px;height:44px;background-image:url('${a.image}');background-size:cover;border-radius:8px"></div><div style="flex:1"><div style="font-weight:600">${a.name}</div><div style="font-size:13px;color:var(--muted)">${a.status} • ${a.habitat}</div></div></div>`;
+        endangeredList.appendChild(d);
+      });
+    }
+
+    // trivia rotation
+    let triviaIndex = 0;
+    function rotateTrivia(){
+      triviaBox.textContent = trivia[triviaIndex % trivia.length];
+      triviaIndex++;
+    }
+
+    // profile modal
+    const modal = document.getElementById('modal');
+    const profileImage = document.getElementById('profileImage');
+    const profileName = document.getElementById('profileName');
+    const profileType = document.getElementById('profileType');
+    const profileStatus = document.getElementById('profileStatus');
+    const profileDesc = document.getElementById('profileDesc');
+    const profileHabitat = document.getElementById('profileHabitat');
+    const profileDiet = document.getElementById('profileDiet');
+    const profileThumbs = document.getElementById('profileThumbs');
+    const externalLink = document.getElementById('externalLink');
+
+    function openProfile(id){
+      const a = animals.find(x=>x.id===id);
+      if(!a) return;
+      profileImage.style.backgroundImage = `url('${a.image}')`;
+      profileName.textContent = a.name;
+      profileType.textContent = a.type.charAt(0).toUpperCase()+a.type.slice(1);
+      profileStatus.textContent = a.status;
+      profileDesc.textContent = a.description;
+      profileHabitat.textContent = a.habitat;
+      profileDiet.textContent = a.diet || '—';
+      profileThumbs.innerHTML='';
+      a.images.forEach(src=>{
+        const im = document.createElement('img'); im.src=src; im.alt=a.name; im.onclick = ()=> profileImage.style.backgroundImage = `url('${src}')`;
+        profileThumbs.appendChild(im);
+      });
+      externalLink.href = a.resource || '#';
+      modal.classList.add('open');
+    }
+
+    document.getElementById('closeModal').onclick = ()=> modal.classList.remove('open');
+    modal.addEventListener('click', (e)=>{ if(e.target===modal) modal.classList.remove('open'); });
+
+    // search handlers
+    searchInput.addEventListener('input', (e)=>{
+      activeQuery = e.target.value;
+      renderCards();
+    });
+    clearBtn.addEventListener('click', ()=>{ searchInput.value=''; activeQuery=''; activeCategory=null; renderCards(); highlightCat(); });
+
+    // keyboard: Esc to close modal
+    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') modal.classList.remove('open'); });
+
+    // init render
+    renderCategories(); highlightCat(); renderCards(); renderSideGallery(); renderEndangered(); rotateTrivia(); setInterval(rotateTrivia,6000);
+
+    // small accessibility: allow opening first result by Enter when focusing search
+    searchInput.addEventListener('keydown', (e)=>{
+      if(e.key==='Enter'){
+        const first = animals.filter(a=>{ if(activeCategory && a.category!==activeCategory) return false; const q = searchInput.value.trim().toLowerCase(); if(!q) return true; return a.name.toLowerCase().includes(q) || a.type.toLowerCase().includes(q) || a.category.toLowerCase().includes(q); })[0];
+        if(first) openProfile(first.id);
+      }
+    });
+
+    // small helper: responsive images prefetch
+    animals.forEach(a=>{ const i=new Image(); i.src=a.image; (a.images||[]).forEach(s=>{ const j=new Image(); j.src=s; }); });
+renderGifGallery();
+    // For developers: you can add more animals by editing the `animals` array near the top of the script.
+  </script>
+</body>
+</html>
